@@ -11,13 +11,13 @@ const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(cors({
-  origin: 'http://localhost:3000'
+  origin: 'https://gerador-loterias-pro.vercel.app'
 }));
 app.use(express.json());
 
 // Rota teste
 app.get('/', (req, res) => {
-  res.send('🚀 Backend Gerador Loterias PRO rodando!');
+  res.send('🚀 Backend Gerador Loterias PRO online');
 });
 
 // Criar sessão de pagamento Stripe
@@ -31,8 +31,8 @@ app.post('/create-checkout-session', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: 'http://localhost:3000/?premium=true',
-      cancel_url: 'http://localhost:3000/cancelado',
+      success_url: 'https://gerador-loterias-pro.vercel.app/?premium=true',
+      cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
     });
 
     res.json({ url: session.url });
@@ -44,6 +44,6 @@ app.post('/create-checkout-session', async (req, res) => {
 
 const PORT = 4242;
 app.listen(PORT, () => {
-  console.log(`🚀 Backend Stripe rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Backend Stripe rodando`);
 });
 
