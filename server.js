@@ -8,63 +8,53 @@ dotenv.config();
 const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ================================
-// 🔐 WEBHOOK STRIPE (ANTES DO JSON)
-// ================================
-app.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
-  (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    let event;
+// ⚠️ IMPORTANTE: webhook usa RAW
+app.use('/webhook', express.raw({ type: 'application/json' }));
 
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.error('❌ Webhook signature error:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // 🎯 Evento principal
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
-
-      console.log('✅ PAGAMENTO CONFIRMADO');
-      console.log('Session ID:', session.id);
-      console.log('Email:', session.customer_details?.email);
-
-      // 🔓 AQUI você ativa o Premium de verdade
-      // Exemplo:
-      // salvarPremium(session.customer_details.email);
-    }
-
-    res.json({ received: true });
-  }
-);
-
-// ================================
-// 🌐 MIDDLEWARES NORMAIS
-// ================================
 app.use(cors({
   origin: 'https://gerador-loterias-pro.vercel.app'
 }));
 
 app.use(express.json());
 
-// ================================
-// 🧪 ROTA TESTE
-// ================================
+// Rota teste
 app.get('/', (req, res) => {
   res.send('🚀 Backend Gerador Loterias PRO online');
 });
 
-// ================================
-// 💳 CHECKOUT STRIPE
-// ================================
+// 🔔 WEBHOOK STRIPE
+app.post('/webhook', (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook erro:', err.message);
+    return res.status(400).send(`Webhook Error`);
+  }
+
+  // ✅ PAGAMENTO CONCLUÍDO
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+
+    console.log('💰 Pagamento confirmado:', session.customer_email);
+
+    // 👉 Aqui você libera o Premium
+    // Exemplo:
+    // salvar no banco
+    // marcar usuário como premium
+  }
+
+  res.json({ received: true });
+});
+
+// Criar sessão de checkout
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -75,19 +65,18 @@ app.post('/create-checkout-session', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: 'https://gerador-loterias-pro.vercel.app/?premium=true',
+      success_url: 'https://gerador-loterias-pro.vercel.app/sucesso',
       cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
     });
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error('❌ Erro checkout:', err.message);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================================
-const PORT = 4242;
+const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => {
-  console.log('🚀 Backend Stripe rodando');
+  console.log('🚀 Backend Stripe rodando em produção');
 });
