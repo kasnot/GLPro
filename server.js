@@ -20,7 +20,7 @@ app.use(cors({
 app.use(express.json());
 
 //3️⃣ ROTAS PÚBLICAS (SEM JWT)
-🔓 Rota de teste
+//🔓 Rota de teste
 
 app.get('/', (req, res) => {
   res.send('🚀 Backend Gerador Loterias PRO online');
@@ -64,7 +64,7 @@ app.post('/login', async (req, res) => {
 });
 
 //4️⃣ 🔐 MIDDLEWARE JWT (Proteção)
-👉 Este bloco vem DEPOIS do login e ANTES das rotas protegidas:
+//👉 Este bloco vem DEPOIS do login e ANTES das rotas protegidas:
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -85,7 +85,7 @@ function authMiddleware(req, res, next) {
 }
 
 //5️⃣ 🟡 ROTA PROTEGIDA (EXEMPLO REAL)
-👉 SIM — ela vem logo abaixo do middleware
+//👉 SIM — ela vem logo abaixo do middleware
 
 app.get('/me', authMiddleware, (req, res) => {
   res.json({
@@ -95,7 +95,7 @@ app.get('/me', authMiddleware, (req, res) => {
 });
 
 //6️⃣ STRIPE (Checkout)
-👉 Pode ficar depois, sem problema:
+//👉 Pode ficar depois, sem problema:
 
 app.post('/create-checkout-session', async (req, res) => {
   const session = await stripe.checkout.sessions.create({
