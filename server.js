@@ -108,6 +108,43 @@ app.post('/create-checkout-session', async (req, res) => {
   res.json({ url: session.url });
 });
 
+//CUPOM DE DESCONTO
+
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    // Tentativa com cupom
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [
+        { price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', quantity: 1 }
+      ],
+      discounts: [
+        { coupon: 'lqHqMdKE' }
+      ],
+      success_url: 'https://gerador-loterias-pro.vercel.app/sucesso',
+      cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
+    });
+
+    return res.json({ url: session.url });
+
+  } catch (err) {
+    console.warn('Cupom inválido ou expirado, seguindo sem desconto');
+
+    // Fallback sem cupom
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [
+        { price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', quantity: 1 }
+      ],
+      success_url: 'https://gerador-loterias-pro.vercel.app/sucesso',
+      cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
+    });
+
+    return res.json({ url: session.url });
+  }
+});
+
+
 //7️⃣ START DO SERVIDOR (FINAL DO ARQUIVO)
 
 const PORT = process.env.PORT || 4242;
