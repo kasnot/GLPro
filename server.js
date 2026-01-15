@@ -94,53 +94,43 @@ app.get('/me', authMiddleware, (req, res) => {
   });
 });
 
-//6️⃣ STRIPE (Checkout)
-//👉 Pode ficar depois, sem problema:
-
-app.post('/create-checkout-session', async (req, res) => {
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    line_items: [{ price: 'price_xxx', quantity: 1 }],
-    success_url: 'https://gerador-loterias-pro.vercel.app/?premium=true',
-    cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
-  });
-
-  res.json({ url: session.url });
-});
-
-//CUPOM DE DESCONTO
-
+//6️⃣ STRIPE (Checkout) - Versão Final Corrigida
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    // Tentativa com cupom
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [
-        { price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', quantity: 1 }
+        { 
+          price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', // Verifique se este ID está correto no Stripe
+          quantity: 1 
+        }
       ],
       discounts: [
-        { coupon: 'lqHqMdKE' }
+        { coupon: 'lqHqMdKE' } // Remova esta linha se não tiver criado o cupom no Stripe
       ],
-      success_url: 'https://gerador-loterias-pro.vercel.app/sucesso',
+      success_url: 'https://gerador-loterias-pro.vercel.app/?premium=true',
       cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
     });
 
     return res.json({ url: session.url });
 
   } catch (err) {
-    console.warn('Cupom inválido ou expirado, seguindo sem desconto');
+    console.error('Erro no Stripe:', err.message);
 
-    // Fallback sem cupom
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [
-        { price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', quantity: 1 }
-      ],
-      success_url: 'https://gerador-loterias-pro.vercel.app/sucesso',
-      cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
-    });
-
-    return res.json({ url: session.url });
+    // Fallback: Tenta sem o cupom caso o erro seja o cupom expirado
+    try {
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        line_items: [
+          { price: 'price_1SjoxTFVNPCBqlFYAmzXVvNY', quantity: 1 }
+        ],
+        success_url: 'https://gerador-loterias-pro.vercel.app/?premium=true',
+        cancel_url: 'https://gerador-loterias-pro.vercel.app/cancelado',
+      });
+      return res.json({ url: session.url });
+    } catch (fallbackErr) {
+      return res.status(500).json({ error: 'Erro ao criar sessão de pagamento' });
+    }
   }
 });
 
